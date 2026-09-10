@@ -10,7 +10,7 @@
 
 [![Track](https://img.shields.io/badge/DataForge_2026-Pathway_Track-4f2fd6?style=for-the-badge)](https://unstop.com/hackathons/dataforge-2026-iit-kharagpur-1739346)
 [![Team](https://img.shields.io/badge/Team-Code_Rebels-141518?style=for-the-badge)](#-team)
-[![Live](https://img.shields.io/badge/live-open_the_explainer-0f8a5f?style=for-the-badge)](https://amaancoderx.github.io/DataForge-2026-Code-Rebels-/)
+[![Live](https://img.shields.io/badge/live-open_the_explainer-0f8a5f?style=for-the-badge)](https://claude.ai/code/artifact/fe15b579-7994-4778-8e59-ad54e5b0b09b)
 [![Repo](https://img.shields.io/badge/source-GitHub-141518?style=for-the-badge&logo=github)](https://github.com/amaancoderx/DataForge-2026-Code-Rebels-)
 
 [![Dependencies](https://img.shields.io/badge/dependencies-0-0f8a5f?style=flat-square)](#-architecture)
@@ -21,7 +21,8 @@
 
 <br>
 
-**[▶ Open the explainer](https://amaancoderx.github.io/DataForge-2026-Code-Rebels-/)** &nbsp;·&nbsp;
+**[▶ Open the explainer](https://claude.ai/code/artifact/fe15b579-7994-4778-8e59-ad54e5b0b09b)** &nbsp;·&nbsp;
+**[🪞 Mirror (GitHub Pages)](https://amaancoderx.github.io/DataForge-2026-Code-Rebels-/)** &nbsp;·&nbsp;
 **[💻 Source repository](https://github.com/amaancoderx/DataForge-2026-Code-Rebels-)** &nbsp;·&nbsp;
 **[📄 Concept summary (PDF)](concept-summary.pdf)** &nbsp;·&nbsp;
 **[🔬 Evidence run](EVIDENCE.md)** &nbsp;·&nbsp;

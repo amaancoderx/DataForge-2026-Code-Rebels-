@@ -1,7 +1,7 @@
-/* build.mjs — assemble the shipped pages from src/.
+/* build.mjs: assemble the shipped pages from src/.
    Produces:
-     artifact.html  — body fragment, for publishing as a Claude Artifact
-     index.html     — standalone page, for GitHub Pages / opening locally
+     artifact.html : body fragment, for publishing as a Claude Artifact
+     index.html    : standalone page, for GitHub Pages / opening locally
    Usage: node build.mjs                                                     */
 import fs from "node:fs";
 import path from "node:path";
