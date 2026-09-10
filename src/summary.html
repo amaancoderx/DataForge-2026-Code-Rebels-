@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>The Interference Budget, concept summary</title>
+<style>
+@page{size:A4;margin:8mm 10mm}
+*{box-sizing:border-box}
+body{font:8.2pt/1.24 "Charter","Georgia",serif;color:#15161a;margin:0}
+h1{font-size:13pt;line-height:1.15;margin:0 0 2mm;letter-spacing:-.01em}
+.sub{font:7.6pt/1.28 "Segoe UI",system-ui,sans-serif;color:#555c66;margin:0 0 1.5mm}
+.rule{height:2px;background:#4f2fd6;margin:1.8mm 0 2mm}
+h2{font:bold 8.6pt/1.2 "Segoe UI",system-ui,sans-serif;color:#4f2fd6;margin:2.3mm 0 1mm;
+   text-transform:uppercase;letter-spacing:.06em}
+p{margin:0 0 1.5mm;text-align:justify}
+.mono{font-family:Consolas,"Cascadia Mono",monospace;font-size:8.2pt}
+table{width:100%;border-collapse:collapse;font:7.8pt/1.22 "Segoe UI",system-ui,sans-serif;margin:1.5mm 0 2.4mm}
+th{text-align:left;border-bottom:1.2px solid #15161a;padding:1.1mm 1.6mm;font-size:7.7pt;
+   text-transform:uppercase;letter-spacing:.05em;color:#3a3f47}
+td{border-bottom:.5px solid #ccd0d6;padding:1.3mm 1.6mm;vertical-align:top}
+td:first-child{font-weight:600;white-space:nowrap}
+.k{background:#f2eeff;border-left:2.5px solid #4f2fd6;padding:2mm 2.6mm;margin:2mm 0 2.6mm}
+.k p{margin:0}
+.foot{border-top:.8px solid #ccd0d6;margin-top:3mm;padding-top:1.8mm;
+  font:7.5pt/1.35 "Segoe UI",system-ui,sans-serif;color:#555c66}
+.foot b{color:#15161a}
+em.t{font-style:normal;font-weight:600}
+</style></head><body>
+
+<h1>The Interference Budget: what a fixed-size memory actually trades away</h1>
+<p class="sub"><b>DataForge 2026 · Pathway Track · one-page concept summary. Team Code Rebels: Mohammed Amaan Khan (Leader), Arslan Alam.</b>
+Concept: synaptic plasticity as short-term memory (additive fast-weight / linear-attention state).
+Artifact: an interactive explainer with a live toy substrate. Audience: a data scientist who knows softmax attention.</p>
+<div class="rule"></div>
+
+<h2>The design pressure</h2>
+<p>Softmax attention stores the past losslessly: a KV cache of <span class="mono">N</span> tokens, scanned per
+query. Cost grows with the sequence, which is the constraint driving the entire post-Transformer programme.
+Linear attention removes the softmax so the sum over past tokens can be reassociated into a single
+<em class="t">state matrix</em> updated once per token (Katharopoulos et al., arXiv:2006.16236), equivalently, a
+<em class="t">fast-weight</em> memory written by outer products (Schlag et al., arXiv:2102.11174). Read cost
+becomes constant. The usual framing stops there, and it is where most explanations go wrong.</p>
+
+<div class="k"><p><b>Central claim.</b> The saving is not free and is not primarily about compute. An additive
+state stores every association in <em>one shared matrix</em>, so a query returns the value it asked for
+<em>plus</em> a crosstalk term <span class="mono">Σ<sub>j≠i</sub> v<sub>j</sub>(k<sub>j</sub>·k<sub>i</sub>)</span>.
+The binding constraint is therefore <em>key overlap</em>, not storage. Nothing ever runs out of space; what
+degrades is separability.</p></div>
+
+<h2>What our artifact demonstrates, live</h2>
+<p>The explainer runs a deliberately small associative memory (8 symbols × <span class="mono">d</span> neurons)
+in the browser and lets the learner falsify two consequences of that claim. <b>First:</b> accuracy is a function
+of the ratio <span class="mono">N/d</span>, not of <span class="mono">N</span>. Over seeds 1-8 we measure 100%,
+98%, 89%, 70% at <span class="mono">N/d</span> = 0.25, 0.5, 1.0, 2.0, and the <em>same</em> four numbers at
+<span class="mono">d</span> = 64, 128 and 256. <b>Second, and less obvious:</b> sparsifying the keys helps only
+if the code is also non-negative. Sparsifying a <em>signed</em> code from 100% to 3% active moves accuracy
+94.5% → 94.4% (nothing: the shared coordinates cancel in sign, so overlap stays pinned near
+<span class="mono">1/√d</span>). Sparsifying a <em>non-negative</em> code over the same range moves it
+20.3% → 90.8%, with mean overlap falling 0.93 → 0.03. Sparsity and non-negativity are not two independent
+optimisations; each is what makes the other viable.</p>
+
+<h2>Where BDH sits</h2>
+<p>Dragon Hatchling (BDH; Kosowski, Uznański, Chorowski, Stamirowska, Bartoszkiewicz, arXiv:2509.26507)
+reformulates attention as synaptic plasticity: a state <span class="mono">σ</span> the authors interpret
+directly as synapse weights between neuron pairs, written Hebbian-style as the model reads. Its
+normalisation-free update is <span class="mono">σ<sub>t</sub> := (σ<sub>t−1</sub> + y<sub>t−1</sub>x<sub>t</sub><sup>T</sup>)U</span>
+(Eq. 7), with closed form <span class="mono">σ<sub>t−1</sub> = Σ<sub>τ&lt;t</sub> y<sub>τ</sub>x<sub>τ</sub><sup>T</sup>U<sup>t−τ</sup></span>
+(Eq. 16), <b>a purely additive, damped sum of outer products with no error-correcting term</b>. BDH therefore
+inherits exactly the crosstalk problem above and must control it structurally. It does: BDH-GPU is described
+as "a specific kind of ReLU-lowrank feed-forward network, and a linear attention mechanism, which both operate
+in the same neuron dimension n, using positive activation vectors" (Claim 2), with reported sparsity around 5%.
+That is the pairing our artifact isolates, and it explains a second BDH result for free, since a synapse
+driven by few neurons can only encode few things, which is the structural precondition for the monosemantic
+synapses the paper reports.</p>
+
+<h2>The landscape</h2>
+<table>
+<tr><th>System</th><th>State update</th><th>How it controls interference</th><th>Cost of that choice</th></tr>
+<tr><td>Softmax + KV</td><td>append</td><td>none needed, keys stay separate</td><td>state and read grow with N</td></tr>
+<tr><td>Linear attn.</td><td>additive</td><td>nothing structural</td><td>degrades with key overlap</td></tr>
+<tr><td>GLA / Mamba</td><td>gated / selective</td><td>data-dependent decay: forget selectively</td><td>old facts fade whether or not stale</td></tr>
+<tr><td>DeltaNet</td><td>delta rule</td><td>subtract the stale value when writing</td><td>sequential dependency in the update</td></tr>
+<tr><td><b>BDH</b></td><td><b>additive + damping</b></td><td><b>sparse non-negative addressing</b></td><td>needs very wide n; damping still hand-set</td></tr>
+</table>
+<p>Read the last two rows against each other: DeltaNet fixes the <em>write</em>, BDH fixes the <em>code</em>.
+Our artifact lets a learner run both repairs on the same matrix and see that neither one enlarges it.</p>
+
+<h2>Evidence, classified honestly</h2>
+<p><b>Reproduced by us, live:</b> only the general mechanism, ratio-invariance, the sparsity × non-negativity
+interaction, and the delta rule's advantage on repeated keys. Deterministic, seeded, and re-runnable with
+<span class="mono">node verify.mjs</span>. <b>Reported by BDH's authors, not reproduced:</b> the ~5% sparsity
+figure (measured 4.0-7.5% on a <em>synthetic letter task</em>, not natural language); monosemanticity
+(<em>two hand-picked synapses</em> on a Europarl model, Mann-Whitney U); heavy-tailed connectivity (one head of
+one layer, <b>no power-law exponent is fitted anywhere in the paper</b>, so "scale-free with exponent α" is an
+overstatement we avoid). Language results are character-level Europarl loss against a TransformerXL-style
+baseline, and the parity claim belongs to the <em>gated</em> BDH-GPU′ variant, not a benchmark sweep against
+GPT-2. <b>BDH-CQ</b> (arXiv:2608.09888) is the later sibling doing recurrent latent reasoning with no parameter
+updates at inference; its 24.25% pass@1 / 29.5% pass@2 on ARC-AGI-1 public eval at ~$0.0007/task from a 150M
+model are <em>developer-reported</em>, not leaderboard-verified (an AWS post quotes 29.2% for the same result).
+Its role in <em>this</em> concept is peripheral and we do not inflate it.</p>
+
+<h2>The most important limitation</h2>
+<p>Ours: keys here are random, not learned, so our curves are a pessimistic lower bound, a trained model can
+actively decorrelate its keys, and how much that buys is not something this artifact measures. BDH's, in its
+own words: an additive state needs damping "to avoid overwhelming the model with noise from stale context",
+and the paper supplies RoPE/ALiBi-style damping rather than a principled criterion. <b>That is the open
+question this concept leaves standing:</b> gating (GLA, Mamba), error-correction (DeltaNet) and sparse positive
+coding (BDH) are three uncoordinated answers to one problem, and no published evaluation isolates them against
+each other on equal footing. The comparison would be worth running.</p>
+
+<div class="foot">
+<b>Continue from here:</b> BDH arXiv:2509.26507 §5.2 and Eq. 7/16 · Schlag et al. arXiv:2102.11174 §3 (fast
+weights and capacity) · Yang et al. arXiv:2406.06484 §2 (delta rule, key collisions) · Yang et al.
+arXiv:2312.06635 (gating) · Behrouz et al. arXiv:2501.00663 (test-time memory) · Katharopoulos et al.
+arXiv:2006.16236.
+&nbsp;·&nbsp; <b>Artifact + source:</b> github.com/amaancoderx/DataForge-2026-Code-Rebels- Prose CC BY 4.0, code MIT. AI assistance disclosed in README.
+</div>
+</body></html>

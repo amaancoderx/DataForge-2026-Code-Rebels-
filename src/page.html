@@ -1,0 +1,588 @@
+<title>The Interference Budget</title>
+<style>
+:root{
+  --bg:#fbfaf8; --panel:#ffffff; --ink:#141518; --ink2:#4a4f58; --ink3:#787f8a;
+  --line:#e4e2dd; --line2:#d2cfc8;
+  --accent:#4f2fd6; --accent2:#7c5cf0; --accent-soft:#efeaff;
+  --good:#0f8a5f; --good-soft:#e3f5ed;
+  --bad:#c2372b; --bad-soft:#fbe9e7;
+  --warn:#a8690a;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:"Iowan Old Style",Charter,Georgia,serif;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e0f12; --panel:#16181d; --ink:#f0eeea; --ink2:#b6bcc6; --ink3:#7f8794;
+    --line:#262a31; --line2:#343a44;
+    --accent:#a48bff; --accent2:#8b6cf5; --accent-soft:#1e1a33;
+    --good:#3ddc9a; --good-soft:#0f2b22;
+    --bad:#ff7d6e; --bad-soft:#2e1614;
+    --warn:#e0a44a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e0f12; --panel:#16181d; --ink:#f0eeea; --ink2:#b6bcc6; --ink3:#7f8794;
+  --line:#262a31; --line2:#343a44;
+  --accent:#a48bff; --accent2:#8b6cf5; --accent-soft:#1e1a33;
+  --good:#3ddc9a; --good-soft:#0f2b22;
+  --bad:#ff7d6e; --bad-soft:#2e1614;
+  --warn:#e0a44a;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;
+  -webkit-font-smoothing:antialiased;font-size:16px}
+.wrap{max-width:960px;margin:0 auto;padding-inline:20px}
+h1,h2,h3{line-height:1.2;margin:0}
+a{color:var(--accent)}
+code.mono{font-family:var(--mono);font-size:.88em}
+
+header.top{border-bottom:1px solid var(--line);background:var(--panel)}
+.top .wrap{padding-block:28px 26px}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:var(--serif);font-size:clamp(30px,6vw,50px);letter-spacing:-.02em;margin:10px 0 0;font-weight:600}
+.dek{color:var(--ink2);font-size:clamp(15px,2.4vw,18px);margin-top:12px;max-width:64ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.tag{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);color:var(--ink3);
+  padding:4px 9px;border-radius:100px;white-space:nowrap}
+
+.claim{border-left:3px solid var(--accent);background:var(--accent-soft);padding:18px 20px;border-radius:0 var(--r) var(--r) 0}
+.claim .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.claim p{margin:8px 0 0;font-size:17px;font-family:var(--serif);line-height:1.5;color:var(--ink)}
+
+section{padding-block:44px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:10px}
+h2{font-size:clamp(21px,3.6vw,27px);letter-spacing:-.015em;font-weight:650}
+h3{font-size:16px;font-weight:650}
+p{margin:14px 0;max-width:70ch;color:var(--ink2)}
+p strong{color:var(--ink);font-weight:620}
+.lead{font-size:17px;color:var(--ink)}
+
+.lab{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-top:22px;overflow:hidden}
+.lab-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg)}
+.lab-hd .t{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.live{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--good);font-weight:600}
+.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--good);
+  animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live::before{animation:none}}
+.lab-body{padding:16px}
+
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px 20px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink2);text-transform:uppercase;font-weight:600}
+.ctrl .val{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:0}
+.ctrl input[type=range]{width:100%;margin-top:7px;accent-color:var(--accent);height:20px}
+.hint{font-size:11px;color:var(--ink3);margin-top:3px;font-family:var(--sans);text-transform:none;letter-spacing:0;font-weight:400}
+
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;margin-top:7px;flex-wrap:wrap}
+.seg button{appearance:none;background:transparent;border:0;border-right:1px solid var(--line2);
+  color:var(--ink2);font-family:var(--mono);font-size:11px;padding:7px 11px;cursor:pointer;letter-spacing:.03em}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff;font-weight:600}
+.seg button:hover:not([aria-pressed=true]){background:var(--accent-soft);color:var(--accent)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:16px}
+.stat{background:var(--panel);padding:11px 13px}
+.stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.stat .v{font-family:var(--mono);font-size:21px;font-weight:700;margin-top:3px;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
+.stat .s{font-size:11px;color:var(--ink3);margin-top:1px}
+.v.ok{color:var(--good)} .v.no{color:var(--bad)} .v.mid{color:var(--warn)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--panel);min-width:0}
+.card h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px;font-weight:600}
+canvas{display:block;width:100%;height:auto;max-width:100%;border-radius:5px}
+
+.eq{font-family:var(--mono);font-size:13.5px;background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;padding:13px 15px;margin:16px 0;overflow-x:auto;color:var(--ink);line-height:1.9;white-space:pre}
+.eq .c{color:var(--ink3)}
+
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+td strong{color:var(--ink)}
+.tw{overflow-x:auto}
+
+.note{border:1px solid var(--line2);border-radius:8px;padding:13px 15px;margin-top:18px;background:var(--panel)}
+.note .nh{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:5px}
+.note p{margin:5px 0 0;font-size:14px}
+.note.honest{border-color:var(--warn)} .note.honest .nh{color:var(--warn)}
+.note.bdh{border-color:var(--accent);background:var(--accent-soft)} .note.bdh .nh{color:var(--accent)}
+
+ul,ol{color:var(--ink2);max-width:70ch;padding-left:20px}
+li{margin:7px 0}
+.btn{appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;
+  font-family:var(--mono);font-size:12px;font-weight:600;padding:9px 15px;border-radius:8px;cursor:pointer;letter-spacing:.03em}
+.btn:hover{background:var(--accent2);border-color:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+
+.q{border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-top:12px;background:var(--panel)}
+.q .qt{font-weight:620;color:var(--ink);font-size:14.5px}
+.q .opts{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+.q .opts button{text-align:left;background:var(--bg);border:1px solid var(--line2);color:var(--ink2);
+  padding:9px 12px;border-radius:7px;cursor:pointer;font-size:13.5px;font-family:var(--sans);line-height:1.45}
+.q .opts button:hover{border-color:var(--accent);color:var(--ink)}
+.q .opts button.right{background:var(--good-soft);border-color:var(--good);color:var(--good);font-weight:600}
+.q .opts button.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.q .exp{margin-top:11px;font-size:13.5px;color:var(--ink2);border-top:1px solid var(--line);padding-top:11px}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-top:9px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+.refs{font-size:13.5px}
+.refs li{margin:9px 0;color:var(--ink2)}
+.refs .rt{color:var(--ink);font-weight:600}
+footer{padding-block:36px}
+footer p{color:var(--ink3);font-size:13px}
+</style>
+
+<header class="top"><div class="wrap">
+  <div class="kicker">DataForge 2026 &middot; Pathway Track &middot; Interactive Explainer</div>
+  <h1>The Interference Budget</h1>
+  <p class="dek">Every fixed-size memory, linear attention, a fast-weight layer, a synapse matrix in
+  Dragon Hatchling, buys constant cost by letting its memories <em>overlap</em>. This page lets you
+  spend that budget until it breaks, then hand you the two repairs the field actually uses.</p>
+  <div class="meta">
+    <span class="tag">Concept: Synaptic plasticity as short-term memory</span>
+    <span class="tag">Audience: comfortable with matrices + softmax attention</span>
+    <span class="tag">~10 min &middot; 60-second core test</span>
+    <span class="tag">Live toy model, no server</span>
+  </div>
+</div></header>
+
+<div class="wrap">
+
+<section id="claim">
+  <div class="claim">
+    <div class="lbl">The one sentence this page teaches, and lets you falsify</div>
+    <p>A fixed-size synaptic state stores associations by <em>summing</em> outer products, so it absorbs an
+    unbounded stream without allocating a slot per token, but every memory then shares one matrix, and
+    retrieval is corrupted by a crosstalk term set by the <em>overlap between keys</em>. Two consequences you
+    can force this page to admit or refute: accuracy depends on the ratio <span class="mono">N/d</span> rather
+    than on <span class="mono">N</span>; and sparsifying the keys rescues accuracy <em>only if the code is
+    also non-negative</em>, which is precisely the pairing BDH's positive activations commit to.</p>
+  </div>
+  <p class="lead" style="margin-top:22px">Below is a real associative memory running in your browser right now.
+  It is not an animation. Every number on this page is computed from the matrix you are about to break.</p>
+  <div class="btnrow">
+    <button class="btn" id="btn60">&#9654;&nbsp; Run the 60-second test</button>
+    <button class="btn ghost" id="btnjump">Skip to the sandbox</button>
+  </div>
+  <div class="note honest">
+    <div class="nh">Honesty, up front</div>
+    <p>The model in this page is a <strong>toy associative memory we wrote for teaching</strong>. It is not
+    BDH, not a BDH checkpoint, and not a reimplementation of one. It isolates the single mechanism BDH shares
+    with the linear-attention family so you can watch that mechanism behave. Every claim about BDH itself is
+    labelled, sourced to the paper, and marked as reported-by-authors rather than reproduced by us.</p>
+  </div>
+</section>
+
+<section id="lab1">
+  <div class="eyebrow">Act I &middot; The substrate</div>
+  <h2>One matrix, many memories</h2>
+  <p>We store <strong>key &rarr; symbol</strong> pairs. Each key <span class="mono">k</span> is a vector over
+  <span class="mono">d</span> "neurons". Each value <span class="mono">v</span> is a one-hot vector over 8
+  symbols, so we always know the ground truth. Writing is one line, and it is the whole idea:</p>
+
+  <div class="eq">S  &larr;  &lambda;&middot;S  +  v k<sup>T</sup>          <span class="c">// Hebbian write: co-active units strengthen a connection</span>
+&ycirc;  =  S k<sub>q</sub> / (k<sub>q</sub>&middot;k<sub>q</sub>)     <span class="c">// read: one matrix-vector product</span></div>
+
+  <p>There is no list of past tokens anywhere. <span class="mono">S</span> is
+  <span class="mono">8 &times; d</span> floats <em>forever</em>. Push the <strong>pairs stored</strong> slider
+  and watch what that costs you.</p>
+
+  <div class="lab">
+    <div class="lab-hd"><span class="t">Lab 1, write, read, break</span><span class="live">live compute</span></div>
+    <div class="lab-body">
+      <div class="ctrls">
+        <div class="ctrl">
+          <label for="cN">Pairs stored <span class="val" id="vN">24</span></label>
+          <input type="range" id="cN" min="1" max="160" value="24">
+          <div class="hint">How many key&rarr;symbol facts are in the one matrix</div>
+        </div>
+        <div class="ctrl">
+          <label for="cD">Neurons d <span class="val" id="vD">64</span></label>
+          <input type="range" id="cD" min="8" max="256" step="8" value="64">
+          <div class="hint">Width of the key space = the state's capacity</div>
+        </div>
+        <div class="ctrl">
+          <label for="cS">Active per key <span class="val" id="vS">100%</span></label>
+          <input type="range" id="cS" min="2" max="100" value="100">
+          <div class="hint">Fraction of the d neurons that fire for one key. 100% = dense</div>
+        </div>
+        <div class="ctrl">
+          <label>Key code</label>
+          <div class="seg" id="segCode">
+            <button data-v="signed" aria-pressed="true">Signed&nbsp;&plusmn;</button>
+            <button data-v="relu" aria-pressed="false">ReLU&nbsp;non-negative</button>
+          </div>
+          <div class="hint">Can a neuron's contribution be negative, or only zero-or-positive?</div>
+        </div>
+        <div class="ctrl">
+          <label>Write rule</label>
+          <div class="seg" id="segRule">
+            <button data-v="hebb" aria-pressed="true">Hebbian&nbsp;sum</button>
+            <button data-v="delta" aria-pressed="false">Delta&nbsp;rule</button>
+          </div>
+          <div class="hint">Delta subtracts what the state already says before writing</div>
+        </div>
+        <div class="ctrl">
+          <label for="cL">Decay &lambda; <span class="val" id="vL">1.000</span></label>
+          <input type="range" id="cL" min="900" max="1000" value="1000">
+          <div class="hint">&lambda;&lt;1 damps old writes, a recency bias</div>
+        </div>
+        <div class="ctrl">
+          <label for="cQ">Inspect pair # <span class="val" id="vQ">1</span></label>
+          <input type="range" id="cQ" min="1" max="24" value="1">
+          <div class="hint">Which stored fact to query on the right</div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="k">Recall accuracy</div><div class="v" id="sAcc"></div><div class="s" id="sAccS">top-1 over all stored pairs</div></div>
+        <div class="stat"><div class="k">Mean key overlap</div><div class="v" id="sSnr"></div><div class="s">mean |k<sub>i</sub>&middot;k<sub>j</sub>|, the crosstalk driver</div></div>
+        <div class="stat"><div class="k">State size</div><div class="v" id="sState"></div><div class="s">floats, constant in N</div></div>
+        <div class="stat"><div class="k">KV cache would be</div><div class="v" id="sKv"></div><div class="s">floats, grows with N</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Truth beside estimate, query <span id="qlab">#1</span></h3>
+          <canvas id="cvBars" width="760" height="330"></canvas>
+          <div class="legend"><span><i style="background:var(--good)"></i>ground truth symbol</span>
+            <span><i style="background:var(--accent)"></i>model score</span>
+            <span><i style="background:var(--bad)"></i>wrong winner</span></div>
+        </div>
+        <div class="card">
+          <h3>The state S (8 symbols &times; d neurons)</h3>
+          <canvas id="cvHeat" width="760" height="330"></canvas>
+          <div class="legend"><span><i style="background:#c2372b"></i>negative</span>
+            <span><i style="background:var(--line2)"></i>zero</span>
+            <span><i style="background:#4f2fd6"></i>positive</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3>Accuracy as memories accumulate, recomputed live, write by write</h3>
+        <canvas id="cvCurve" width="1120" height="300"></canvas>
+        <div class="legend"><span><i style="background:var(--accent)"></i>current settings</span>
+          <span><i style="background:var(--ink3)"></i>dense baseline (100% active, Hebbian)</span>
+          <span><i style="background:var(--bad)"></i>N = d, the naive capacity line</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <div class="nh">What you should have just seen</div>
+    <p>Perfect recall for a while, then a slide, not a cliff. Nothing ran out of space: the matrix never
+    grew and never shrank, and the <em>state size</em> readout never moved. What degraded was
+    <em>separability</em>. Now do the control experiment: double <span class="mono">N</span> <strong>and</strong>
+    double <span class="mono">d</span>. Accuracy should return to roughly where it was.</p>
+    <p style="margin-top:9px">Across seeds 1-8 our evidence run gets 100%, 98%, 89%, 70% at
+    <span class="mono">N/d</span> = 0.25, 0.5, 1.0, 2.0, and it gets those same four numbers at
+    <span class="mono">d</span>=64, 128 and 256. <strong>The ratio is the variable; the size is not.</strong>
+    Reproduce it with <span class="mono">node verify.mjs</span> (experiment E1).</p>
+  </div>
+</section>
+
+<section id="why">
+  <div class="eyebrow">Act II &middot; The mechanism</div>
+  <h2>Why it fails: read the crosstalk term</h2>
+  <p>Take the Hebbian state with <span class="mono">&lambda;=1</span> and query it with a stored key
+  <span class="mono">k<sub>i</sub></span>. Substitute the sum and pull out the term you wanted:</p>
+
+  <div class="eq">S k<sub>i</sub>  =  ( &Sigma;<sub>j</sub> v<sub>j</sub> k<sub>j</sub><sup>T</sup> ) k<sub>i</sub>
+        =  v<sub>i</sub> (k<sub>i</sub>&middot;k<sub>i</sub>)   +   &Sigma;<sub>j&ne;i</sub> v<sub>j</sub> (k<sub>j</sub>&middot;k<sub>i</sub>)
+           <span class="c">&#9585;__________&#9585;      &#9585;______________________&#9585;</span>
+           <span class="c">   the answer            the interference</span></div>
+
+  <p><strong>Every other memory votes on every query</strong>, weighted by how much its key overlaps yours.
+  This is the entire failure mode, and it tells you exactly what to optimise: not the size of the state, but
+  the inner products <span class="mono">k<sub>j</sub>&middot;k<sub>i</sub></span>.</p>
+
+  <p>With random dense unit keys in <span class="mono">d</span> dimensions, each overlap is roughly
+  <span class="mono">&plusmn;1/&radic;d</span>, and <span class="mono">N&minus;1</span> of them add up like a
+  random walk, so the interference grows like <span class="mono">&radic;(N/d)</span>. Accuracy therefore
+  degrades <em>gracefully with the ratio N/d</em>, which is exactly the curve you just drew. Push
+  <span class="mono">d</span> up and the cliff moves right; push <span class="mono">N</span> up and it moves left.</p>
+
+  <div class="note">
+    <div class="nh">Test the mechanism, not the story</div>
+    <p>If the explanation above is right, then <em>reducing key overlap without changing d or N</em> must
+    restore accuracy. That is a falsifiable prediction, and it is what the next control does.</p>
+  </div>
+</section>
+
+<section id="bdh">
+  <div class="eyebrow">Act III &middot; The BDH module</div>
+  <h2>Repair #1, sparsity, and why Dragon Hatchling is built this way</h2>
+
+  <p>Here is the experiment, and it has a twist that catches most people. Set
+  <span class="mono">N=96, d=128</span> and leave them alone for the rest of this section, capacity is
+  now fixed and cannot explain anything that follows.</p>
+
+  <p><strong>First, sparsify the signed code.</strong> Drag <em>Active per key</em> from 100% down to 3%.
+  Watch the accuracy readout. It barely moves: our evidence run gets 94.5% &rarr; 94.4%. Two random
+  <em>signed</em> sparse keys with <span class="mono">a&middot;d</span> active units share about
+  <span class="mono">a&sup2;d</span> coordinates, but the signs of those shared terms cancel, so the overlap
+  stays pinned near <span class="mono">1/&radic;d</span> &asymp; 0.07 the whole way down. <strong>Sparsity on
+  its own buys you nothing.</strong></p>
+
+  <p><strong>Now switch Key code to ReLU non-negative</strong> and start again at 100% active. Accuracy
+  collapses to about 20%, barely above the 12.5% you get by guessing. Of course it does: with no
+  negative entries there is no cancellation at all, every key overlaps every other key by
+  <span class="mono">0.93</span>, and the state is one undifferentiated smear. A dense positive code is the
+  <em>worst</em> associative memory on this page.</p>
+
+  <p><strong>Then sparsify that.</strong> 100% &rarr; 50% &rarr; 25% &rarr; 12% &rarr; 6% &rarr; 3%; our run
+  measures accuracy 20.3%, 26.6%, 50.4%, 72.0%, 86.5%, 90.8% with overlap falling 0.93, 0.46, 0.23, 0.11,
+  0.059, 0.032. For a non-negative code, overlap falls roughly <em>linearly</em> in the active fraction,
+  because there are simply fewer shared coordinates and nothing cancels the ones that remain.</p>
+
+  <div class="claim" style="margin-top:20px">
+    <div class="lbl">The result worth remembering</div>
+    <p>Sparsity and non-negativity are not two independent nice-to-haves. Sparsity is what makes a
+    non-negative code viable, and non-negativity is what makes sparsity <em>pay</em>. Either alone is a
+    dead end; together they take the same matrix from 20% to 91% with
+    <span class="mono">N</span>, <span class="mono">d</span>, and the state size all untouched.</p>
+  </div>
+
+  <div class="note bdh">
+    <div class="nh">Where this shows up in Dragon Hatchling</div>
+    <p>BDH is presented as a local graph-dynamics model of interacting neurons in which what a Transformer
+    calls attention is carried instead by <strong>synaptic state written Hebbian-style as the model reads</strong>.
+    Its state is a matrix <span class="mono">&sigma;</span> the authors interpret directly as synapse weights
+    between neuron pairs, and in the normalisation-free form of the architecture the update is literally the
+    accumulation you have been breaking:</p>
+    <div class="eq" style="margin:11px 0">&sigma;<sub>t,l</sub>  :=  ( &sigma;<sub>t&minus;1,l</sub>  +  y<sub>t,l&minus;1</sub> x<sub>t,l</sub><sup>T</sup> ) U        <span class="c">// BDH-Normfree, Eq. (7)</span>
+&sigma;<sub>t&minus;1,l</sub>   =  &Sigma;<sub>&tau;&lt;t</sub>  y<sub>&tau;,l&minus;1</sub> x<sub>&tau;,l</sub><sup>T</sup> U<sup>t&minus;&tau;</sup>       <span class="c">// closed form, Eq. (16)</span></div>
+    <p>That closed form is the point of contact. <strong>BDH's memory is a decayed sum of outer products, purely additive, with no error-correcting term</strong> (<span class="mono">U</span> is a diagonal
+    or block-diagonal damping/rotation, i.e. our <span class="mono">&lambda;</span> and nothing more). BDH
+    therefore sits squarely on the Hebbian side of Act IV's fork, and it must control interference some other
+    way. It does: the paper's own summary of BDH-GPU is <em>"a specific kind of ReLU-lowrank feed-forward
+    network, and a linear attention mechanism, which both operate in the same neuron dimension n, using
+    positive activation vectors."</em> Positive activations, the code you just watched fail at 100%
+    density, paired with reported sparsity of about 5%.</p>
+    <p style="margin-top:9px">So the sparsity slider is not decoration. For an architecture that has committed
+    to non-negative addressing and additive writes, <strong>sparsity is not a tuning knob, it is the thing
+    holding the memory together</strong>. And it pays a second dividend: a synapse driven by a handful of
+    neurons can only ever mean a handful of things, which is the structural precondition for the
+    <em>monosemantic</em> synapses the paper reports. Interference control and interpretability fall out of
+    one decision.</p>
+    <p style="margin-top:9px"><strong>Evidence level, read this carefully.</strong> Everything in this
+    box about BDH is <em>reported by its authors</em> in arXiv:2509.26507 and has not been reproduced by us.
+    Specifically: the ~5% figure is measured at 4.0-7.5% of <span class="mono">y</span> entries non-zero
+    during memorisation (~2.5% during repetition) on a <em>synthetic letter task</em>, not on natural language;
+    the monosemanticity result is <em>two hand-picked synapses</em> on a Europarl-trained model, supported by a
+    Mann-Whitney U test, not a systematic dictionary; the connectivity result is a heavy-tailed degree
+    histogram from one head of one layer, and <strong>no power-law exponent is fitted anywhere in the paper</strong>, say "heavy-tailed", not "scale-free with exponent&nbsp;&alpha;". What <em>is</em> live and
+    reproducible on this page is the general mechanism only: that in an additive outer-product memory, sparse
+    non-negative addressing suppresses crosstalk while dense non-negative addressing destroys it.</p>
+  </div>
+
+  <div class="note honest">
+    <div class="nh">Where the analogy stops, four things not to overclaim</div>
+    <p>(1) BDH's <span class="mono">&sigma;</span> lives on synapses inside a full architecture with
+    feed-forward blocks, ReLU gating and normalisation; our <span class="mono">S</span> is one bare matrix with
+    none of that. (2) BDH's keys are <em>learned</em> activations and training can actively decorrelate them;
+    ours are random, so our curves are a pessimistic lower bound. (3) <strong>BDH is not a state-space model
+    in the Mamba sense</strong>, do not file it there; BDH-GPU's own framing is ReLU-lowrank plus linear
+    attention. (4) The paper's language results are character-level Europarl loss curves against a
+    TransformerXL-style baseline, and the headline parity claim is for the <em>gated</em> BDH-GPU&prime;
+    variant, not a benchmark sweep against GPT-2.</p>
+  </div>
+
+  <div class="note">
+    <div class="nh">And BDH-CQ? Say what is true, not what is convenient</div>
+    <p>BDH-CQ (arXiv:2608.09888) is the later sibling: in-context learning with recurrent latent reasoning,
+    where inputs at inference time update a recurrent memory and the answer is computed by iterating in latent
+    space rather than by emitting a chain of thought, with, in the authors' words, no parameters updated
+    at inference. It reports 24.25% pass@1 and 29.5% pass@2 on the 400-task ARC-AGI-1 public evaluation split
+    at roughly $0.0007 per task, from a 150M-parameter model. Those figures are <em>developer-reported</em>,
+    not an independent leaderboard verification, and an AWS blog post quotes 29.2% for the same result, so
+    cite the paper. <strong>Its direct relevance to <em>this</em> explainer is limited and we will not
+    manufacture more.</strong> The paper describes its state as recurrent memory and relates it to fast-weight
+    and linear-attention views of contextual association; it does not use BDH's synapse vocabulary, and the
+    concept on this page, crosstalk in additive outer-product memory, is grounded in BDH, not
+    BDH-CQ.</p>
+  </div>
+</section>
+
+<section id="delta">
+  <div class="eyebrow">Act IV &middot; The other repair</div>
+  <h2>Repair #2, stop adding, start correcting</h2>
+  <p>Sparsity attacks the <em>overlap</em> factor. The delta rule attacks the <em>accumulation</em> instead:
+  before writing, subtract what the state already believes.</p>
+
+  <div class="eq">Hebbian:   S &larr; S + v k<sup>T</sup>                    <span class="c">// pile it on</span>
+Delta:     S &larr; S + &beta;&middot;(v &minus; S k) k<sup>T</sup>/(k&middot;k)     <span class="c">// write the error, not the value</span></div>
+
+  <p>When a key repeats, Hebbian writing stacks both answers into the same rows and the read returns their
+  sum, so the query lands on a <em>tie</em> broken by whatever crosstalk noise happens to be around.
+  That is why the Hebbian column below sits near 50% and stays there: it is not degrading, it is flipping a
+  coin between the stale value and the correction. The delta rule subtracts the stale value as part of the
+  write, so there is nothing left to tie with. This is the move that separates <strong>DeltaNet</strong>-style
+  linear attention from the plain additive kind, its authors motivate it exactly this way, noting that
+  a purely additive rule "makes it difficult to deallocate past key-value associations, eventually leading to
+  key collisions."</p>
+
+  <p><strong>This is also where BDH sits on the map, and it is worth being precise about it:</strong> BDH's
+  published update (Eq. 7/16) is purely additive with damping, there is no delta correction in it. BDH
+  is on the left-hand column below. It buys its interference control with sparse non-negative addressing
+  instead, which is a different design decision, not a weaker version of the same one.</p>
+
+  <p>Switch <strong>Write rule</strong> to Delta in Lab 1 and re-run the sweep. Then try both repairs
+  together. Note what does <em>not</em> happen: neither repair makes the state bigger. The interference budget
+  is being spent more carefully, not raised.</p>
+
+  <div class="lab">
+    <div class="lab-hd"><span class="t">Lab 2, the repeated-key stress test</span><span class="live">live compute</span></div>
+    <div class="lab-body">
+      <p style="margin-top:0">Here every key is written <strong>twice</strong>, the second time with a
+      <em>different, corrected</em> symbol, a fact being updated. Only the second symbol is correct.
+      This is the case pure summation cannot represent.</p>
+      <div class="ctrls">
+        <div class="ctrl">
+          <label for="cN2">Facts (each written twice) <span class="val" id="vN2">12</span></label>
+          <input type="range" id="cN2" min="1" max="60" value="12">
+        </div>
+        <div class="ctrl">
+          <label for="cS2">Active per key <span class="val" id="vS2">100%</span></label>
+          <input type="range" id="cS2" min="2" max="100" value="100">
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Hebbian sum</div><div class="v" id="sHeb"></div><div class="s">recalls the <em>update</em> correctly</div></div>
+        <div class="stat"><div class="k">Delta rule</div><div class="v" id="sDel"></div><div class="s">same state size, same d</div></div>
+        <div class="stat"><div class="k">State size</div><div class="v" id="sState2"></div><div class="s">identical for both</div></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>Recall of the corrected value, Hebbian vs Delta, as facts accumulate</h3>
+        <canvas id="cvCurve2" width="1120" height="290"></canvas>
+        <div class="legend"><span><i style="background:var(--bad)"></i>Hebbian sum</span>
+          <span><i style="background:var(--good)"></i>Delta rule</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cost">
+  <div class="eyebrow">Act V &middot; The trade</div>
+  <h2>What you bought, and what you paid</h2>
+  <p>Softmax attention keeps every key and value and compares your query against all of them. It has
+  <em>no</em> interference term, that is its genuine advantage, and it is why it does not degrade as
+  context grows. It pays for that with a KV cache that grows linearly with the sequence and a read that scans it.</p>
+  <div class="tw"><table>
+    <thead><tr><th>&nbsp;</th><th>Softmax attention + KV cache</th><th>Additive linear attention / fast weights</th><th>Delta-rule linear attention</th></tr></thead>
+    <tbody>
+      <tr><td><strong>State per layer</strong></td><td>grows as O(N&middot;d)</td><td>fixed d<sub>v</sub>&times;d</td><td>fixed d<sub>v</sub>&times;d</td></tr>
+      <tr><td><strong>Read cost per token</strong></td><td>O(N&middot;d)</td><td>O(d<sub>v</sub>&middot;d)</td><td>O(d<sub>v</sub>&middot;d)</td></tr>
+      <tr><td><strong>Interference</strong></td><td>none, keys stay separate</td><td>grows with key overlap &times; &radic;N</td><td>duplicate-key part removed</td></tr>
+      <tr><td><strong>Updating a stored fact</strong></td><td>append; softmax can select the newer one</td><td><strong>cannot overwrite</strong>, sums both</td><td>overwrites cleanly</td></tr>
+      <tr><td><strong>What sparsity buys</strong></td><td>little, no crosstalk to remove</td><td><strong>a lot</strong>, kills most overlap terms</td><td>a lot</td></tr>
+    </tbody>
+  </table></div>
+  <p>So the honest statement of the trade is not "linear attention is cheaper." It is: <strong>linear attention
+  converts a growing memory into a fixed one by allowing memories to overlap, and the entire engineering
+  programme of this family is about managing that overlap</strong>, by gating and decay (RWKV, RetNet,
+  GLA), by error-correcting writes (DeltaNet), by test-time memory objectives (Titans), or, in BDH's case, by
+  making the addressing sparse, non-negative and biologically motivated in the first place.</p>
+</section>
+
+<section id="check">
+  <div class="eyebrow">Act VI &middot; Explain it back</div>
+  <h2>Three questions. Answer before you scroll.</h2>
+  <div id="quiz"></div>
+  <div class="note honest" style="margin-top:22px">
+    <div class="nh">Stated limits of this artifact</div>
+    <p>&bull; Values are one-hot over 8 symbols so ground truth is exact; real models store distributed values,
+    where degradation is smoother and harder to see. &bull; Keys are random (or random-sparse), not learned;
+    learned keys can be far better separated, so our curves are a <em>lower bound</em> on what a trained model
+    achieves. &bull; No softmax, no normalisation layer, no multi-layer stack, no training, this isolates
+    one mechanism deliberately. &bull; The dense capacity heuristic <span class="mono">N &asymp; d</span> is a
+    rough scale, not a theorem for this setup. &bull; Sweeps are capped at N=160 and d=256 to keep every control
+    under ~50&nbsp;ms. &bull; All randomness is seeded, so your numbers are reproducible; change the seed in the
+    sandbox to check that no single draw is doing the work.</p>
+  </div>
+</section>
+
+<section id="sandbox">
+  <div class="eyebrow">Act VII &middot; Sandbox</div>
+  <h2>Now break it deliberately</h2>
+  <p>Everything is unlocked. Some experiments worth running, each of which can falsify something said above:</p>
+  <ul>
+    <li><strong>Hold N/d constant</strong> (N=32,d=64 then N=64,d=128). If the mechanism story is right,
+    accuracy should be roughly the same. Is it?</li>
+    <li><strong>Sparsity at fixed capacity.</strong> Set d=64, N=120, dense &rarr; broken. Now drop to 5%
+    active. If accuracy recovers <em>without touching d or N</em>, overlap, not capacity, was the
+    binding constraint.</li>
+    <li><strong>Find where sparsity stops helping.</strong> Below some fraction, keys have so few active units
+    that distinct facts start landing on identical supports. Locate that floor.</li>
+    <li><strong>Decay as a competitor.</strong> Can &lambda;&lt;1 alone rescue the dense case? What does it cost
+    the <em>oldest</em> memories? (Inspect pair #1 versus pair #N.)</li>
+    <li><strong>Delta rule with heavy overlap.</strong> Does correcting the write also help when keys merely
+    <em>resemble</em> each other, or only when they exactly repeat?</li>
+  </ul>
+  <div class="btnrow">
+    <button class="btn ghost" id="btnSeed">New random seed</button>
+    <button class="btn ghost" id="btnReset">Reset to defaults</button>
+  </div>
+</section>
+
+<section id="refs">
+  <div class="eyebrow">Sources</div>
+  <h2>Where to continue</h2>
+  <p>Primary sources, cited beside the claims they support above. Everything asserted about BDH comes from the
+  first item; we mark it as author-reported because we did not reproduce it.</p>
+  <ol class="refs">
+    <li><span class="rt">Kosowski, Uzna&#324;ski, Chorowski, Stamirowska, Bartoszkiewicz, "The Dragon
+      Hatchling: The Missing Link between the Transformer and Models of the Brain" (30 Sep 2025).</span>
+      arXiv:2509.26507. Source for: &sigma; as synapse weights and Eq. (7)/(16); BDH-GPU as "ReLU-lowrank
+      feed-forward network and a linear attention mechanism... using positive activation vectors" (Claim 2);
+      ~5% sparsity (Fig. 14, 4.0-7.5% on a synthetic letter task); two monosemantic synapses on Europarl
+      (&sect;6.3); heavy-tailed degree distribution (Fig. 11, no exponent fitted).</li>
+    <li><span class="rt">Engdahl, Kosowski, Chorowski, Stamirowska et al., "BDH-CQ: In-Context Learning
+      with Recurrent Latent Reasoning" (10 Aug 2026).</span> arXiv:2608.09888. Source for: recurrent latent
+      reasoning without verbalised intermediate steps, no parameter updates at inference, and the
+      developer-reported ARC-AGI-1 public-eval figures quoted in Act III.</li>
+    <li><span class="rt">Schlag, Irie, Schmidhuber, "Linear Transformers Are Secretly Fast Weight
+      Programmers" (ICML 2021).</span> arXiv:2102.11174. Source for: the fast-weight reading of linear
+      attention, the capacity/interference problem, and the delta-rule write.</li>
+    <li><span class="rt">Yang, Wang, Zhang et al., "Parallelizing Linear Transformers with the Delta Rule
+      over Sequence Length" (NeurIPS 2024).</span> arXiv:2406.06484. Source for: DeltaNet's error-correcting
+      update and its advantage on recall-style tasks.</li>
+    <li><span class="rt">Yang, Wang, Shen, Panda, Kim, "Gated Linear Attention Transformers with
+      Hardware-Efficient Training" (2023).</span> arXiv:2312.06635. Source for: data-dependent gating/decay as
+      the other standard control on accumulated state, the &lambda; slider, made learnable.</li>
+    <li><span class="rt">Katharopoulos et al., "Transformers are RNNs" (ICML 2020).</span>
+      arXiv:2006.16236. The identity that makes the fixed-size state possible at all.</li>
+    <li><span class="rt">Peng et al., RWKV (2023), arXiv:2305.13048; Sun et al., RetNet (2023),
+      arXiv:2307.08621; Gu &amp; Dao, Mamba (2023), arXiv:2312.00752; Behrouz, Zhong, Mirrokni, Titans (Dec 2024), arXiv:2501.00663.</span> The comparison landscape in Act V, four different
+      answers to the same interference problem.</li>
+  </ol>
+  <p style="font-size:13.5px">Further BDH reading, from Pathway directly: <em>From Attention to Synapses:
+  Deriving BDH</em>, <em>The Equations of Reasoning</em>, <em>Why BDH Uses a Brain-Inspired Architecture</em>,
+  and the official toy BDH implementation. If you want to continue from here, the sharpest open question this
+  page raises is the one BDH itself flags: an additive state needs damping to stop stale context from
+  swamping it, and choosing that damping is unresolved, our &lambda; slider is the crudest possible
+  version of a problem that GLA, Mamba and Titans each answer differently.</p>
+</section>
+
+<footer><div style="max-width:70ch">
+  <p><strong>Team Code Rebels</strong> &middot; Mohammed Amaan Khan (Team Leader) &middot; Arslan Alam<br>
+  <strong>Built for DataForge 2026 (KDAG, IIT Kharagpur), Pathway Track.</strong>
+  Zero dependencies, zero network calls, no analytics. All computation runs in your browser from a seeded PRNG.
+  Source, README, reproduction instructions and full AI-assistance disclosure live in the repository: <a href="https://github.com/amaancoderx/DataForge-2026-Code-Rebels-">github.com/amaancoderx/DataForge-2026-Code-Rebels-</a>.
+  Code MIT-licensed; prose CC BY 4.0.</p>
+</div></footer>
+
+</div>
